@@ -7,7 +7,7 @@ from io import BytesIO
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.route("/") # the only function not decored by casares itself!
 def hello_world():
     return "Hello from the server!"
 
