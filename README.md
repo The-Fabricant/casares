@@ -17,7 +17,9 @@ conda env create -f environment.yml
 conda activate casares-env
 ```
 
-## Example
+## Examples
+
+- a simple GET request
 
 ```python
 from casares.server import casares_get, run_server
