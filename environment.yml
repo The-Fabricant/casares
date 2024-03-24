@@ -1,0 +1,10 @@
+name: casares-env
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - flask>=2.0
+  - pillow
+  - pip
+  - pip:
+      - -e .
