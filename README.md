@@ -10,10 +10,17 @@ It abstracts all the mechanism of creating routes typical of Flask, the only thi
 
 ## Installation
 
-First, ensure you have Conda installed, then create and activate a new environment:
+You can install as `pip` package:
+
+```bash
+git clone https://github.com/The-Fabricant/casares
+cd casares
+pip install -e .
+```
 
 
-## Environment
+
+## Conda Environment
 ```
 conda env create -f environment.yml
 conda activate casares-env
