@@ -5,6 +5,8 @@ It abstracts all the mechanism of creating routes typical of Flask, the only thi
 
 ![Casares](/images/casares.jpg)
 
+[Wonder who is Casares?](https://en.wikipedia.org/wiki/Adolfo_Bioy_Casares)
+
 
 ## Installation
 
