@@ -3,13 +3,14 @@ import argparse
 import functools
 from PIL import Image
 from io import BytesIO
+import trimesh # for 3d assets
 
 app = Flask(__name__)
 
 
 @app.route("/") # the only function not decored by casares itself!
 def hello_world():
-    return "Hello from the server!"
+    return "Hello from a Casares server!"
 
 def casares_get(f):
     """
@@ -69,6 +70,42 @@ def casares_post_images(func):
     app.route(endpoint, methods=['POST'])(wrapper)
     
     return wrapper
+
+
+def casares_post_obj(func):
+    """
+    A decorator that processes POST requests with an OBJ file,
+    calls the decorated function with the OBJ file as a trimesh object, 
+    and returns the result as an image response.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # Ensure there's exactly one OBJ file in the request
+        if 'file' not in request.files:
+            return "No OBJ file provided", 400
+
+        # Load the OBJ file from the request
+        obj_file = request.files['file']
+        try:
+            obj_mesh = trimesh.load(obj_file.stream, file_type='obj')
+        except Exception as e:
+            return f"Failed to process OBJ file: {str(e)}", 400
+
+        # Call the decorated function with the trimesh object
+        result_image = func(obj_mesh)
+
+        # Prepare and send the result image as a response
+        img_io = BytesIO()
+        result_image.save(img_io, 'JPEG', quality=80)
+        img_io.seek(0)
+        return send_file(img_io, mimetype='image/jpeg')
+
+    # Register the wrapper function as a Flask route
+    endpoint = f"/{func.__name__}"
+    app.route(endpoint, methods=['POST'])(wrapper)
+    
+    return wrapper
+
 
 
 def run_server(port=3000):
