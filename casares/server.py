@@ -1,3 +1,4 @@
+import inspect
 from flask import Flask, request, send_file
 import argparse
 import functools
@@ -25,88 +26,68 @@ def casares_get(f):
     
     return wrapper
 
-def casares_post(f):
+def casares_post(input_types, output_type):
     """
-    Decorator to define a Flask route for POST requests
-    using the function name as the endpoint.
-    """
-    endpoint = f"/{f.__name__}"  # Route based on the function name
-
-    @app.route(endpoint, methods=['POST'])  # Define route with Flask
-    def wrapper(*args, **kwargs):
-        return f(*args, **kwargs)
+    A generic decorator that processes POST requests with different types of inputs
+    and returns an image as a response.
     
-    return wrapper
-
-def casares_post_images(func):
+    Parameters:
+    - input_types: Expected input types (list of 'text', 'image', 'obj')
+    - output_type: Expected output type ('image')
     """
-    A decorator that processes POST requests with 1 to N images,
-    calls the decorated function with those images as a list, and returns the result as an image response.
-    """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        images = []
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            inputs = {}
 
-        # Loop through all files in the POST request
-        for image_key in request.files:
-            image = Image.open(request.files[image_key].stream)
-            images.append(image)
+            if 'text' in input_types:
+                # Process text input
+                text = request.form.get('text', '')
+                if text:
+                    inputs['text'] = text
 
-        # Ensure there's at least one image
-        if not images:
-            return "No images provided", 400
+            if 'image' in input_types:
+                # Process multiple images
+                images = []
+                for image_key in request.files:
+                    if request.files[image_key].mimetype.startswith('image/'):
+                        image = Image.open(request.files[image_key].stream)
+                        images.append(image)
 
-        # Call the decorated function with the list of images
-        result_image = func(images)
+                if images:
+                    inputs['images'] = images
 
-        # Prepare and send the result image as a response
-        img_io = BytesIO()
-        result_image.save(img_io, 'JPEG', quality=80)
-        img_io.seek(0)
-        return send_file(img_io, mimetype='image/jpeg')
+            if 'obj' in input_types:
+                # Process single OBJ file
+                if 'file' in request.files and request.files['file'].mimetype == 'application/octet-stream':
+                    obj_file = request.files['file']
+                    try:
+                        obj_mesh = trimesh.load(obj_file, file_type='obj')
+                        inputs['obj'] = obj_mesh
+                    except Exception as e:
+                        return f"Failed to process OBJ file: {str(e)}", 400
 
-    # Register the wrapper function as a Flask route
-    endpoint = f"/{func.__name__}"
-    app.route(endpoint, methods=['POST'])(wrapper)
-    
-    return wrapper
+            if not inputs:
+                return "No valid inputs provided", 400
 
+            # Call the decorated function with the collected inputs
+            result_image = func(**inputs)
 
-def casares_post_obj(func):
-    """
-    A decorator that processes POST requests with an OBJ file,
-    calls the decorated function with the OBJ file as a trimesh object, 
-    and returns the result as an image response.
-    """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        # Ensure there's exactly one OBJ file in the request
-        if 'file' not in request.files:
-            return "No OBJ file provided", 400
+            if output_type == 'image':
+                # Prepare and send the result image as a response
+                img_io = BytesIO()
+                result_image.save(img_io, 'PNG')
+                img_io.seek(0)
+                return send_file(img_io, mimetype='image/png')
+            else:
+                return "Unsupported output type", 400
 
-        # Load the OBJ file from the request
-        obj_file = request.files['file']
-        try:
-            print("Trying to load obj file")
-            obj_mesh = trimesh.load(obj_file, file_type='obj')
-        except Exception as e:
-            return f"Failed to process OBJ file: {str(e)}", 400
+        # Register the wrapper function as a Flask route
+        endpoint = f"/{func.__name__}"
+        app.route(endpoint, methods=['POST'])(wrapper)
 
-        # Call the decorated function with the trimesh object
-        result_image = func(obj_mesh)
-
-        # Prepare and send the result image as a response
-        img_io = BytesIO()
-        result_image.save(img_io, 'PNG')
-        img_io.seek(0)
-        return send_file(img_io, mimetype='image/png')
-
-    # Register the wrapper function as a Flask route
-    endpoint = f"/{func.__name__}"
-    app.route(endpoint, methods=['POST'])(wrapper)
-    
-    return wrapper
-
+        return wrapper
+    return decorator
 
 
 def run_server(port=3000):

@@ -26,60 +26,27 @@ conda env create -f environment.yml
 conda activate casares-env
 ```
 
-## Examples
+## v0.2
 
-- a simple GET request
+Designed a more generic decorator, that accepts an arbitrary number of images, text of 3d obj assets and returns an image
 
-```python
-from casares.server import casares_get, run_server
+### Example
 
-@casares_get
-def hello():
-    return "Hello World!"
-
-if __name__ == "__main__":
-    run_server()
-```
-
-it starts a server on port 3000 (by default). Go to `localhost:3000/hello` and you should see `Hello World!` as a message
-
-- Combine two images by sending a POST request
+The following accepts an obj file and returns an image.  
+BE CAREFUL, at the moment the decorated function arguments need to match the decorators' ones.
 
 ```python
-@casares_post_images
-def combine_images(images):
-
-    image1, image2 = images
-    """
-    Combine two images into one and return the result.
-    """
-    # An example image processing operation: merge images side by side
-    total_width = image1.width + image2.width
-    max_height = max(image1.height, image2.height)
-    new_image = Image.new('RGB', (total_width, max_height))
-    new_image.paste(image1, (0, 0))
-    new_image.paste(image2, (image1.width, 0))
-    return new_image
-```
-
-then you can call the API with:
-
-```bash
-curl -X POST localhost:3000/combine_images -F "image1=@/path/to/image1.png" -F "image2=@/path/to/image2.png" --output "/path/to/output.jpg"
-```
-
-```python
-@casares_post_obj
-def frontal_view(asset):
+@casares_post("obj", "image")
+def frontal_view(obj):
     """
     asset is a trimesh object, this function just returns a cyan flat image
     """
     image_size = (800, 800)
 
     # Load the trimesh asset
-    print(asset.vertices)
-    print(asset.faces)
-    
+    print(obj.vertices)
+    print(obj.faces)
+
     try:
         # Create a blank image just for testing
         image = Image.new('RGB', image_size, color='cyan')
@@ -96,8 +63,20 @@ then you call the API with:
 curl -X POST localhost:3000/frontal_view -F "file=@/path/to/mesh.obj" --output "/path/to/output.png"
 ```
 
-## TODO
+## Other Examples
 
-We can design the decorators to be more generic and accept arguments. For example:  
-- `@casares_post(obj,image)` may define an API call that accept an obj as input and returns an image
-- `@casares_post(images[],image)` may define an API call that accept multiple images as input and return an image
+- a simple GET request
+
+```python
+from casares.server import casares_get, run_server
+
+@casares_get
+def hello():
+    return "Hello World!"
+
+if __name__ == "__main__":
+    run_server()
+```
+
+it starts a server on port 3000 (by default). Go to `localhost:3000/hello` and you should see `Hello World!` as a message
+
