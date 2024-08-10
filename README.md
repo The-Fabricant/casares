@@ -37,15 +37,18 @@ BE CAREFUL, at the moment the decorated function arguments need to match the dec
 
 ```python
 @casares_post("obj", "image")
-def frontal_view(obj):
+def frontal_view(obj, scale=50, translate_y=0):
     """
     asset is a trimesh object, this function just returns a cyan flat image
     """
     image_size = (800, 800)
 
-    # Load the trimesh asset
     print(obj.vertices)
     print(obj.faces)
+
+    # Load the trimesh asset
+    print(scale)
+    print(translate_y)
 
     try:
         # Create a blank image just for testing
@@ -60,7 +63,7 @@ def frontal_view(obj):
 
 then you call the API with:
 ```bash
-curl -X POST localhost:3000/frontal_view -F "file=@/path/to/mesh.obj" --output "/path/to/output.png"
+curl -X POST "localhost:3000/frontal_view?scale=30.0&translate_y=10.0" -F "file=@/path/to/mesh.obj" --output "/path/to/output.png"
 ```
 
 ## Other Examples

@@ -2,15 +2,18 @@ from casares.server import casares_post, run_server
 from PIL import Image
 
 @casares_post("obj", "image")
-def frontal_view(obj):
+def frontal_view(obj,scale=50,translate_y=0):
     """
     asset is a trimesh object, this function just returns a cyan flat image
     """
     image_size = (800, 800)
 
-    # Load the trimesh asset
     print(obj.vertices)
     print(obj.faces)
+
+    # Load the trimesh asset
+    print(scale)
+    print(translate_y)
 
     try:
         # Create a blank image just for testing

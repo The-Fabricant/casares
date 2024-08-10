@@ -62,13 +62,18 @@ def casares_post(input_types, output_type):
                 if 'file' in request.files and request.files['file'].mimetype == 'application/octet-stream':
                     obj_file = request.files['file']
                     try:
-                        obj_mesh = trimesh.load(obj_file, file_type='obj')
+                        obj_mesh = trimesh.load(obj_file.stream, file_type='obj')
                         inputs['obj'] = obj_mesh
                     except Exception as e:
                         return f"Failed to process OBJ file: {str(e)}", 400
 
             if not inputs:
                 return "No valid inputs provided", 400
+
+            # Add additional arguments from query parameters
+            for key in request.args:
+                if key not in inputs:  # Avoid overriding already processed inputs
+                    inputs[key] = request.args.get(key)
 
             # Call the decorated function with the collected inputs
             result_image = func(**inputs)
