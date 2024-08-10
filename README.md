@@ -67,3 +67,37 @@ then you can call the API with:
 ```bash
 curl -X POST localhost:3000/combine_images -F "image1=@/path/to/image1.png" -F "image2=@/path/to/image2.png" --output "/path/to/output.jpg"
 ```
+
+```python
+@casares_post_obj
+def frontal_view(asset):
+    """
+    asset is a trimesh object, this function just returns a cyan flat image
+    """
+    image_size = (800, 800)
+
+    # Load the trimesh asset
+    print(asset.vertices)
+    print(asset.faces)
+    
+    try:
+        # Create a blank image just for testing
+        image = Image.new('RGB', image_size, color='cyan')
+
+        return image
+
+    except Exception as e:
+        print(f"Error occurred during rendering: {e}")
+        return None
+```
+
+then you call the API with:
+```bash
+curl -X POST localhost:3000/frontal_view -F "file=@/path/to/mesh.obj" --output "/path/to/output.png"
+```
+
+## TODO
+
+We can design the decorators to be more generic and accept arguments. For example:  
+- `@casares_post(obj,image)` may define an API call that accept an obj as input and returns an image
+- `@casares_post(images[],image)` may define an API call that accept multiple images as input and return an image

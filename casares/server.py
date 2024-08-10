@@ -87,7 +87,8 @@ def casares_post_obj(func):
         # Load the OBJ file from the request
         obj_file = request.files['file']
         try:
-            obj_mesh = trimesh.load(obj_file.stream, file_type='obj')
+            print("Trying to load obj file")
+            obj_mesh = trimesh.load(obj_file, file_type='obj')
         except Exception as e:
             return f"Failed to process OBJ file: {str(e)}", 400
 
@@ -96,9 +97,9 @@ def casares_post_obj(func):
 
         # Prepare and send the result image as a response
         img_io = BytesIO()
-        result_image.save(img_io, 'JPEG', quality=80)
+        result_image.save(img_io, 'PNG')
         img_io.seek(0)
-        return send_file(img_io, mimetype='image/jpeg')
+        return send_file(img_io, mimetype='image/png')
 
     # Register the wrapper function as a Flask route
     endpoint = f"/{func.__name__}"
