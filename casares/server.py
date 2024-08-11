@@ -1,5 +1,5 @@
 import inspect
-from flask import Flask, request, send_file
+from flask import Flask, Response, request, send_file
 import argparse
 import functools
 from PIL import Image
@@ -7,7 +7,6 @@ from io import BytesIO
 import trimesh # for 3d assets
 
 app = Flask(__name__)
-
 
 @app.route("/") # the only function not decored by casares itself!
 def hello_world():
@@ -29,11 +28,11 @@ def casares_get(f):
 def casares_post(input_types, output_type):
     """
     A generic decorator that processes POST requests with different types of inputs
-    and returns an image as a response.
+    and returns an image, OBJ, GLB, or text as a response.
     
     Parameters:
-    - input_types: Expected input types (list of 'text', 'image', 'obj')
-    - output_type: Expected output type ('image')
+    - input_types: Expected input types (list of 'text', 'image', 'obj', 'glb')
+    - output_type: Expected output type ('image', 'jpg', 'png', 'obj', 'glb', 'text')
     """
     def decorator(func):
         @functools.wraps(func)
@@ -46,7 +45,7 @@ def casares_post(input_types, output_type):
                 if text:
                     inputs['text'] = text
 
-            if 'image' in input_types:
+            if 'image' in input_types or 'jpg' in input_types or 'png' in input_types:
                 # Process multiple images
                 images = []
                 for image_key in request.files:
@@ -62,28 +61,54 @@ def casares_post(input_types, output_type):
                 if 'file' in request.files and request.files['file'].mimetype == 'application/octet-stream':
                     obj_file = request.files['file']
                     try:
-                        obj_mesh = trimesh.load(obj_file.stream, file_type='obj')
+                        obj_mesh = trimesh.load(obj_file, file_type='obj')
                         inputs['obj'] = obj_mesh
                     except Exception as e:
                         return f"Failed to process OBJ file: {str(e)}", 400
 
+            if 'glb' in input_types:
+                # Process single GLB file
+                if 'file' in request.files and request.files['file'].mimetype == 'model/gltf-binary':
+                    glb_file = request.files['file']
+                    try:
+                        glb_mesh = trimesh.load(glb_file, file_type='glb')
+                        inputs['glb'] = glb_mesh
+                    except Exception as e:
+                        return f"Failed to process GLB file: {str(e)}", 400
+
             if not inputs:
                 return "No valid inputs provided", 400
 
-            # Add additional arguments from query parameters
-            for key in request.args:
-                if key not in inputs:  # Avoid overriding already processed inputs
-                    inputs[key] = request.args.get(key)
-
             # Call the decorated function with the collected inputs
-            result_image = func(**inputs)
+            result = func(**inputs)
 
-            if output_type == 'image':
+            if output_type in ['image', 'jpg', 'png']:
                 # Prepare and send the result image as a response
                 img_io = BytesIO()
-                result_image.save(img_io, 'PNG')
+                image_format = 'PNG' if output_type == 'image' else output_type.upper()
+                result.save(img_io, format=image_format)
                 img_io.seek(0)
-                return send_file(img_io, mimetype='image/png')
+                mimetype = f'image/{output_type.lower()}'
+                return send_file(img_io, mimetype=mimetype)
+
+            elif output_type == 'obj':
+                # Return OBJ file
+                obj_io = BytesIO()
+                result.export(file_obj=obj_io, file_type='obj')
+                obj_io.seek(0)
+                return send_file(obj_io, mimetype='application/octet-stream', as_attachment=True, download_name='output.obj')
+
+            elif output_type == 'glb':
+                # Return GLB file
+                glb_io = BytesIO()
+                result.export(glb_io, file_type='glb')
+                glb_io.seek(0)
+                return send_file(glb_io, mimetype='model/gltf-binary', as_attachment=True, download_name='output.glb')
+
+            elif output_type == 'text':
+                # Return plain text response
+                return Response(result, mimetype='text/plain')
+
             else:
                 return "Unsupported output type", 400
 

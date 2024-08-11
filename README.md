@@ -18,26 +18,54 @@ cd casares
 pip install -e .
 ```
 
+## Change Log
+
+### v0.3
+- now `png`, `jpg`, `obj`, `glb`, `text` accepted as input or output
+
+
+
 
 
 ## Conda Environment
-```
+```bash
 conda env create -f environment.yml
 conda activate casares-env
 ```
 
-## v0.2
 
 Designed a more generic decorator, that accepts an arbitrary number of images, text of 3d obj assets and returns an image
 
 ### Example
 
-The following accepts an obj file and returns an image.  
-BE CAREFUL, at the moment the decorated function arguments need to match the decorators' ones.
+```python
+@casares_post("obj", "text")
+def obj_to_txt(obj):
+    """
+    asset is a trimesh object, this function just returns a cyan flat image
+    """
+    output_txt = "Hello World"
 
+    try:
+        # DO SOMETHING WITH YOUR OBJ
+        # output_txt = func(obj)
+
+        return output_txt
+
+    except Exception as e:
+        print(f"Error occurred during rendering: {e}")
+        return None
+```
+ that can be called by:  
+ ```bash
+ curl -X POST localhost:3000/obj_to_txt -F "file=@/path/to/mesh.obj" --output "/path/to/output.txt"
+```
+
+
+### Example
 ```python
 @casares_post("obj", "image")
-def frontal_view(obj, scale=50, translate_y=0):
+def obj_to_image(obj):
     """
     asset is a trimesh object, this function just returns a cyan flat image
     """
@@ -45,10 +73,6 @@ def frontal_view(obj, scale=50, translate_y=0):
 
     print(obj.vertices)
     print(obj.faces)
-
-    # Load the trimesh asset
-    print(scale)
-    print(translate_y)
 
     try:
         # Create a blank image just for testing
@@ -60,6 +84,7 @@ def frontal_view(obj, scale=50, translate_y=0):
         print(f"Error occurred during rendering: {e}")
         return None
 ```
+
 
 then you call the API with:
 ```bash
