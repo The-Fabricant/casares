@@ -20,10 +20,11 @@ pip install -e .
 
 ## Change Log
 
+### v0.4
+- additional arguments can be added to the decorated function and called as parameters from the query
+
 ### v0.3
 - now `png`, `jpg`, `obj`, `glb`, `text` accepted as input or output
-
-
 
 
 
@@ -35,6 +36,37 @@ conda activate casares-env
 
 
 Designed a more generic decorator, that accepts an arbitrary number of images, text of 3d obj assets and returns an image
+
+### Example v0.4 (parameters)
+
+```python
+@casares_post("obj", "text")
+def obj_vertices(obj,scale=1.0,translate_y=0.0):
+    """
+    asset is a trimesh object, this function returns a text response with the vertices of the object
+    """
+
+    print(scale)
+    print(translate_y)
+
+    try:
+        # Convert the list of vertices to a string
+        output_txt = str(scale) + "\n" + str(translate_y) + "\n"
+        vertices_string = "\n".join([f"{vertex[0]} {vertex[1]} {vertex[2]}" for vertex in obj.vertices])
+        return output_txt+ vertices_string
+
+    except Exception as e:
+        print(f"Error occurred during rendering: {e}")
+        return None
+```
+
+that it can be called by:
+```bash
+ curl -X POST "localhost:3000/obj_to_txt?scale=2.0&translate_y=2.0" -F "file=@/path/to/mesh.obj" --output "/path/to/output.txt"
+```
+
+if __name__ == "__main__":
+    run_server()
 
 ### Example
 
@@ -57,7 +89,7 @@ def obj_to_txt(obj):
         return None
 ```
  that can be called by:  
- ```bash
+```bash
  curl -X POST localhost:3000/obj_to_txt -F "file=@/path/to/mesh.obj" --output "/path/to/output.txt"
 ```
 

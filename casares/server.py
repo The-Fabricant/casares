@@ -79,6 +79,15 @@ def casares_post(input_types, output_type):
             if not inputs:
                 return "No valid inputs provided", 400
 
+            # Extract query parameters and pass them as extra arguments
+            for key, value in request.args.items():
+                if key not in inputs:
+                    try:
+                        # Attempt to convert to float, otherwise keep as string
+                        inputs[key] = float(value)
+                    except ValueError:
+                        inputs[key] = value
+
             # Call the decorated function with the collected inputs
             result = func(**inputs)
 
