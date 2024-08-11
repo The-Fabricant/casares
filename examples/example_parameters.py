@@ -1,5 +1,4 @@
 from casares.server import casares_post, run_server
-from PIL import Image
 
 @casares_post("obj", "text")
 def obj_vertices(obj,scale=1.0,translate_y=0.0):
