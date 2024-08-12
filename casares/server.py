@@ -54,7 +54,11 @@ def casares_post(input_types, output_type):
                         images.append(image)
 
                 if images:
-                    inputs['images'] = images
+                    # If only one image is expected, pass it directly
+                    if len(images) == 1:
+                        inputs['png'] = images[0]
+                    else:
+                        inputs['images'] = images
 
             if 'obj' in input_types:
                 # Process single OBJ file
